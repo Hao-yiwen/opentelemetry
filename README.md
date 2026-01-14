@@ -29,7 +29,7 @@
 ### 1. 启动 Jaeger
 
 ```bash
-docker-compose up -d
+docker compose down && docker compose up -d
 ```
 
 ### 2. 启动服务端

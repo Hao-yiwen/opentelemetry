@@ -1,0 +1,47 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  # 导出 Trace 到 Jaeger 1.x (使用 OTLP gRPC)
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  
+  # 导出 Log 到 Loki (使用 Loki 3.x 原生 OTLP)
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+  # 导出 Metric，暴露 Prometheus 格式
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otel_demo
+
+  # 调试输出
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]

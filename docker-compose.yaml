@@ -1,11 +1,97 @@
 services:
+  # OpenTelemetry Collector - 数据中转站
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.116.1
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics exporter
+    environment:
+      - no_proxy=localhost,127.0.0.1,prometheus,jaeger,loki
+      - NO_PROXY=localhost,127.0.0.1,prometheus,jaeger,loki
+    networks:
+      - otel-network
+    depends_on:
+      - jaeger
+      - loki
+    restart: unless-stopped
+
+  # Jaeger - Trace 存储和可视化
   jaeger:
     image: jaegertracing/all-in-one:1.64.0
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
       - "16686:16686" # Jaeger UI
+    networks:
+      - otel-network
     restart: unless-stopped
+
+  # Loki - Log 存储
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"   # Loki API
+    networks:
+      - otel-network
+    restart: unless-stopped
+
+  # Prometheus - Metric 存储
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9091:9090"   # Prometheus UI
+    networks:
+      - otel-network
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  # Grafana - 统一可视化
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - no_proxy=localhost,127.0.0.1,prometheus,jaeger,loki,otel-collector
+      - NO_PROXY=localhost,127.0.0.1,prometheus,jaeger,loki,otel-collector
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"   # Grafana UI
+    networks:
+      - otel-network
+    depends_on:
+      - prometheus
+      - jaeger
+      - loki
+    restart: unless-stopped
+
+networks:
+  otel-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
