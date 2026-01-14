@@ -11,8 +11,11 @@ services:
       - "4318:4318"   # OTLP HTTP receiver
       - "8889:8889"   # Prometheus metrics exporter
     environment:
-      - no_proxy=localhost,127.0.0.1,prometheus,jaeger,loki
-      - NO_PROXY=localhost,127.0.0.1,prometheus,jaeger,loki
+      # 禁用代理，确保内部网络通信正常
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
     networks:
       - otel-network
     depends_on:
@@ -73,8 +76,11 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
-      - no_proxy=localhost,127.0.0.1,prometheus,jaeger,loki,otel-collector
-      - NO_PROXY=localhost,127.0.0.1,prometheus,jaeger,loki,otel-collector
+      # 禁用代理，确保内部网络通信正常
+      - HTTP_PROXY=
+      - HTTPS_PROXY=
+      - http_proxy=
+      - https_proxy=
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
