@@ -1,7 +1,7 @@
 services:
   # OpenTelemetry Collector - 数据中转站
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.116.1
+    image: otel/opentelemetry-collector-contrib:0.165.0
     container_name: otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
@@ -25,7 +25,7 @@ services:
 
   # Jaeger - Trace 存储和可视化
   jaeger:
-    image: jaegertracing/all-in-one:1.64.0
+    image: jaegertracing/all-in-one:1.76.0
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
@@ -37,7 +37,7 @@ services:
 
   # Loki - Log 存储
   loki:
-    image: grafana/loki:3.3.2
+    image: grafana/loki:3.7.10
     container_name: loki
     command: -config.file=/etc/loki/loki-config.yaml
     volumes:
@@ -51,7 +51,7 @@ services:
 
   # Prometheus - Metric 存储
   prometheus:
-    image: prom/prometheus:v3.1.0
+    image: prom/prometheus:v3.16.0
     container_name: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -70,7 +70,7 @@ services:
 
   # Grafana - 统一可视化
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:13.3.1
     container_name: grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
